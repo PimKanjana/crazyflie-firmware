@@ -84,7 +84,8 @@ typedef struct quaternion_s {
 } quaternion_t;
 
 typedef struct tdoaMeasurement_s {
-  point_t anchorPosition[2];
+  point_t anchorPositions[2];
+  uint8_t anchorIds[2];
   float distanceDiff;
   float stdDev;
 } tdoaMeasurement_t;
@@ -130,6 +131,7 @@ typedef struct distanceMeasurement_s {
     };
     float pos[3];
   };
+  uint8_t anchorId;
   float distance;
   float stdDev;
 } distanceMeasurement_t;
@@ -252,6 +254,9 @@ typedef struct {
   const vec3d* rotorPos;     // Pos of rotor origin in global reference frame
   const mat3d* rotorRot;     // Rotor rotation matrix
   const mat3d* rotorRotInv;  // Inverted rotor rotation matrix
+  uint8_t sensorId;
+  uint8_t basestationId;
+  uint8_t sweepId;
   float t;                   // t is the tilt angle of the light plane on the rotor
   float measuredSweepAngle;
   float stdDev;

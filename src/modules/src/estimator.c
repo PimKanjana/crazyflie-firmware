@@ -11,7 +11,8 @@
 #include "estimator_kalman.h"
 #include "log.h"
 #include "statsCnt.h"
-
+#include "eventtrigger.h"
+#include "quatcompress.h"
 
 #define DEFAULT_ESTIMATOR complementaryEstimator
 static StateEstimatorType currentEstimator = anyEstimator;
@@ -25,6 +26,20 @@ STATIC_MEM_QUEUE_ALLOC(measurementsQueue, MEASUREMENTS_QUEUE_SIZE, sizeof(measur
 #define ONE_SECOND 1000
 static STATS_CNT_RATE_DEFINE(measurementAppendedCounter, ONE_SECOND);
 static STATS_CNT_RATE_DEFINE(measurementNotAppendedCounter, ONE_SECOND);
+
+// events
+EVENTTRIGGER(estTDOA, uint8, idA, uint8, idB, float, distanceDiff)
+EVENTTRIGGER(estPosition, float, x, float, y, float, z)
+EVENTTRIGGER(estPose, float, x, float, y, float, z, uint32, quat)
+EVENTTRIGGER(estDistance, uint8, id, float, distance)
+EVENTTRIGGER(estTOF, float, distance)
+EVENTTRIGGER(estAbsoluteHeight, float, height)
+EVENTTRIGGER(estFlow)
+EVENTTRIGGER(estYawError, float, yawError)
+EVENTTRIGGER(estSweepAngle, uint8, sensorId, uint8, basestationId, uint8, sweepId, float, t, float, sweepAngle)
+EVENTTRIGGER(estGyroscope)
+EVENTTRIGGER(estAcceleration)
+EVENTTRIGGER(estBarometer)
 
 static void initEstimator(const StateEstimatorType estimator);
 static void deinitEstimator(const StateEstimatorType estimator);
@@ -143,6 +158,79 @@ void estimatorEnqueue(const measurement_t *measurement) {
     STATS_CNT_RATE_EVENT(&measurementAppendedCounter);
   } else {
     STATS_CNT_RATE_EVENT(&measurementNotAppendedCounter);
+  }
+
+  // events
+  switch (measurement->type) {
+    case MeasurementTypeTDOA:
+      eventTrigger_estTDOA_payload.idA = measurement->data.tdoa.anchorIds[0];
+      eventTrigger_estTDOA_payload.idB = measurement->data.tdoa.anchorIds[1];
+      eventTrigger_estTDOA_payload.distanceDiff = measurement->data.tdoa.distanceDiff;
+      eventTrigger(&eventTrigger_estTDOA);
+      break;
+    case MeasurementTypePosition:
+      eventTrigger_estPosition_payload.x = measurement->data.position.x;
+      eventTrigger_estPosition_payload.y = measurement->data.position.y;
+      eventTrigger_estPosition_payload.z = measurement->data.position.z;
+      eventTrigger(&eventTrigger_estPosition);
+      break;
+    case MeasurementTypePose:
+      {
+        eventTrigger_estPose_payload.x = measurement->data.pose.x;
+        eventTrigger_estPose_payload.y = measurement->data.pose.y;
+        eventTrigger_estPose_payload.z = measurement->data.pose.z;
+        float const q[4] = {
+          measurement->data.pose.quat.x,
+          measurement->data.pose.quat.y,
+          measurement->data.pose.quat.z,
+          measurement->data.pose.quat.w};
+        eventTrigger_estPose_payload.quat = quatcompress(q);
+        eventTrigger(&eventTrigger_estPose);
+      }
+      break;
+    case MeasurementTypeDistance:
+      eventTrigger_estDistance_payload.id = measurement->data.distance.anchorId;
+      eventTrigger_estDistance_payload.distance = measurement->data.distance.distance;
+      eventTrigger(&eventTrigger_estDistance);
+      break;
+    case MeasurementTypeTOF:
+      eventTrigger_estTOF_payload.distance = measurement->data.tof.distance;
+      eventTrigger(&eventTrigger_estTOF);
+      break;
+    case MeasurementTypeAbsoluteHeight:
+      eventTrigger_estAbsoluteHeight_payload.height = measurement->data.height.height;
+      eventTrigger(&eventTrigger_estAbsoluteHeight);
+      break;
+    case MeasurementTypeFlow:
+      // no payload needed, since we have logging variables
+      eventTrigger(&eventTrigger_estFlow);
+      break;
+    case MeasurementTypeYawError:
+      eventTrigger_estYawError_payload.yawError = measurement->data.yawError.yawError;
+      eventTrigger(&eventTrigger_estYawError);
+      break;
+    case MeasurementTypeSweepAngle:
+      eventTrigger_estSweepAngle_payload.sensorId = measurement->data.sweepAngle.sensorId;
+      eventTrigger_estSweepAngle_payload.basestationId = measurement->data.sweepAngle.basestationId;
+      eventTrigger_estSweepAngle_payload.sweepId = measurement->data.sweepAngle.sweepId;
+      eventTrigger_estSweepAngle_payload.t = measurement->data.sweepAngle.t;
+      eventTrigger_estSweepAngle_payload.sweepAngle = measurement->data.sweepAngle.measuredSweepAngle;
+      eventTrigger(&eventTrigger_estSweepAngle);
+      break;
+    case MeasurementTypeGyroscope:
+      // no payload needed, since we have logging variables
+      eventTrigger(&eventTrigger_estGyroscope);
+      break;
+    case MeasurementTypeAcceleration:
+      // no payload needed, since we have logging variables
+      eventTrigger(&eventTrigger_estAcceleration);
+      break;
+    case MeasurementTypeBarometer:
+      // no payload needed, since we have logging variables
+      eventTrigger(&eventTrigger_estBarometer);
+      break;
+    default:
+      break;
   }
 }
 

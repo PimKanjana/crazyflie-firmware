@@ -278,8 +278,10 @@ static void estimatePositionSweepsLh1(const pulseProcessor_t* appState, pulsePro
   sweepInfo.rotorPos = &appState->bsGeometry[baseStation].origin;
   sweepInfo.t = 0;
   sweepInfo.calibrationMeasurementModel = lighthouseCalibrationMeasurementModelLh1;
+  sweepInfo.basestationId = baseStation;
 
   for (size_t sensor = 0; sensor < PULSE_PROCESSOR_N_SENSORS; sensor++) {
+    sweepInfo.sensorId = sensor;
     pulseProcessorBaseStationMeasuremnt_t* bsMeasurement = &angles->sensorMeasurementsLh1[sensor].baseStatonMeasurements[baseStation];
     if (bsMeasurement->validCount == PULSE_PROCESSOR_N_SWEEPS) {
       sweepInfo.sensorPos = &sensorDeckPositions[sensor];
@@ -289,6 +291,7 @@ static void estimatePositionSweepsLh1(const pulseProcessor_t* appState, pulsePro
         sweepInfo.rotorRot = &appState->bsGeometry[baseStation].mat;
         sweepInfo.rotorRotInv = &appState->bsGeoCache[baseStation].baseStationInvertedRotationMatrixes;
         sweepInfo.calib = &bsCalib->sweep[0];
+        sweepInfo.sweepId = 0;
 
         estimatorEnqueueSweepAngles(&sweepInfo);
         STATS_CNT_RATE_EVENT(bsEstRates[baseStation]);
@@ -300,6 +303,7 @@ static void estimatePositionSweepsLh1(const pulseProcessor_t* appState, pulsePro
         sweepInfo.rotorRot = &appState->bsGeoCache[baseStation].lh1Rotor2RotationMatrixes;
         sweepInfo.rotorRotInv = &appState->bsGeoCache[baseStation].lh1Rotor2InvertedRotationMatrixes;
         sweepInfo.calib = &bsCalib->sweep[1];
+        sweepInfo.sweepId = 1;
 
         estimatorEnqueueSweepAngles(&sweepInfo);
         STATS_CNT_RATE_EVENT(bsEstRates[baseStation]);
@@ -317,8 +321,10 @@ static void estimatePositionSweepsLh2(const pulseProcessor_t* appState, pulsePro
   sweepInfo.rotorRot = &appState->bsGeometry[baseStation].mat;
   sweepInfo.rotorRotInv = &appState->bsGeoCache[baseStation].baseStationInvertedRotationMatrixes;
   sweepInfo.calibrationMeasurementModel = lighthouseCalibrationMeasurementModelLh2;
+  sweepInfo.basestationId = baseStation;
 
   for (size_t sensor = 0; sensor < PULSE_PROCESSOR_N_SENSORS; sensor++) {
+    sweepInfo.sensorId = sensor;
     pulseProcessorBaseStationMeasuremnt_t* bsMeasurement = &angles->sensorMeasurementsLh2[sensor].baseStatonMeasurements[baseStation];
     if (bsMeasurement->validCount == PULSE_PROCESSOR_N_SWEEPS) {
       sweepInfo.sensorPos = &sensorDeckPositions[sensor];
@@ -327,6 +333,7 @@ static void estimatePositionSweepsLh2(const pulseProcessor_t* appState, pulsePro
       if (sweepInfo.measuredSweepAngle != 0) {
         sweepInfo.t = -t30;
         sweepInfo.calib = &bsCalib->sweep[0];
+        sweepInfo.sweepId = 0;
         estimatorEnqueueSweepAngles(&sweepInfo);
         STATS_CNT_RATE_EVENT(bsEstRates[baseStation]);
         STATS_CNT_RATE_EVENT(&positionRate);
@@ -336,6 +343,7 @@ static void estimatePositionSweepsLh2(const pulseProcessor_t* appState, pulsePro
       if (sweepInfo.measuredSweepAngle != 0) {
         sweepInfo.t = t30;
         sweepInfo.calib = &bsCalib->sweep[1];
+        sweepInfo.sweepId = 1;
         estimatorEnqueueSweepAngles(&sweepInfo);
         STATS_CNT_RATE_EVENT(bsEstRates[baseStation]);
         STATS_CNT_RATE_EVENT(&positionRate);
