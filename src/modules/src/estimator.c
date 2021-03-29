@@ -29,11 +29,11 @@ static STATS_CNT_RATE_DEFINE(measurementNotAppendedCounter, ONE_SECOND);
 
 // events
 EVENTTRIGGER(estTDOA, uint8, idA, uint8, idB, float, distanceDiff)
-EVENTTRIGGER(estPosition, float, x, float, y, float, z)
-EVENTTRIGGER(estPose, float, x, float, y, float, z, uint32, quat)
+EVENTTRIGGER(estPosition, uint8, source)
+EVENTTRIGGER(estPose)
 EVENTTRIGGER(estDistance, uint8, id, float, distance)
-EVENTTRIGGER(estTOF, float, distance)
-EVENTTRIGGER(estAbsoluteHeight, float, height)
+EVENTTRIGGER(estTOF)
+EVENTTRIGGER(estAbsoluteHeight)
 EVENTTRIGGER(estFlow)
 EVENTTRIGGER(estYawError, float, yawError)
 EVENTTRIGGER(estSweepAngle, uint8, sensorId, uint8, basestationId, uint8, sweepId, float, t, float, sweepAngle)
@@ -169,24 +169,13 @@ void estimatorEnqueue(const measurement_t *measurement) {
       eventTrigger(&eventTrigger_estTDOA);
       break;
     case MeasurementTypePosition:
-      eventTrigger_estPosition_payload.x = measurement->data.position.x;
-      eventTrigger_estPosition_payload.y = measurement->data.position.y;
-      eventTrigger_estPosition_payload.z = measurement->data.position.z;
+      // for additional data, see locSrv.{x,y,z} and lighthouse.{x,y,z}
+      eventTrigger_estPosition_payload.source = measurement->data.position.source;
       eventTrigger(&eventTrigger_estPosition);
       break;
     case MeasurementTypePose:
-      {
-        eventTrigger_estPose_payload.x = measurement->data.pose.x;
-        eventTrigger_estPose_payload.y = measurement->data.pose.y;
-        eventTrigger_estPose_payload.z = measurement->data.pose.z;
-        float const q[4] = {
-          measurement->data.pose.quat.x,
-          measurement->data.pose.quat.y,
-          measurement->data.pose.quat.z,
-          measurement->data.pose.quat.w};
-        eventTrigger_estPose_payload.quat = quatcompress(q);
-        eventTrigger(&eventTrigger_estPose);
-      }
+      // no payload needed, see locSrv.{x,y,z,qx,qy,qz,qw}
+      eventTrigger(&eventTrigger_estPose);
       break;
     case MeasurementTypeDistance:
       eventTrigger_estDistance_payload.id = measurement->data.distance.anchorId;
@@ -194,15 +183,15 @@ void estimatorEnqueue(const measurement_t *measurement) {
       eventTrigger(&eventTrigger_estDistance);
       break;
     case MeasurementTypeTOF:
-      eventTrigger_estTOF_payload.distance = measurement->data.tof.distance;
+      // no payload needed, see range.zrange
       eventTrigger(&eventTrigger_estTOF);
       break;
     case MeasurementTypeAbsoluteHeight:
-      eventTrigger_estAbsoluteHeight_payload.height = measurement->data.height.height;
+      // no payload needed, see LPS_2D_POSITION_HEIGHT
       eventTrigger(&eventTrigger_estAbsoluteHeight);
       break;
     case MeasurementTypeFlow:
-      // no payload needed, since we have logging variables
+      // no payload needed, see motion.{deltaX,deltaY}
       eventTrigger(&eventTrigger_estFlow);
       break;
     case MeasurementTypeYawError:
@@ -218,15 +207,15 @@ void estimatorEnqueue(const measurement_t *measurement) {
       eventTrigger(&eventTrigger_estSweepAngle);
       break;
     case MeasurementTypeGyroscope:
-      // no payload needed, since we have logging variables
+      // no payload needed, see gyro.{x,y,z}
       eventTrigger(&eventTrigger_estGyroscope);
       break;
     case MeasurementTypeAcceleration:
-      // no payload needed, since we have logging variables
+      // no payload needed, see acc.{x,y,z}
       eventTrigger(&eventTrigger_estAcceleration);
       break;
     case MeasurementTypeBarometer:
-      // no payload needed, since we have logging variables
+      // no payload needed, see baro.asl
       eventTrigger(&eventTrigger_estBarometer);
       break;
     default:

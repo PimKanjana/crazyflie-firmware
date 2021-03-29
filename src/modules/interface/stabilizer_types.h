@@ -83,6 +83,11 @@ typedef struct quaternion_s {
   };
 } quaternion_t;
 
+typedef enum {
+  MeasurementSourceLocationService  = 0,
+  MeasurementSourceLighthouse       = 1,
+} measurementSource_t;
+
 typedef struct tdoaMeasurement_s {
   point_t anchorPositions[2];
   uint8_t anchorIds[2];
@@ -106,6 +111,7 @@ typedef struct positionMeasurement_s {
     float pos[3];
   };
   float stdDev;
+  measurementSource_t source;
 } positionMeasurement_t;
 
 typedef struct poseMeasurement_s {
